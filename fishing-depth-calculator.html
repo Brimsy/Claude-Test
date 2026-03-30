@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fishing Depth Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
+    .card {
+      background: #fff;
+      border: 0.5px solid #ddd;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 12px;
+    }
+    .section-label {
+      font-size: 11px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .section-header .section-label { margin-bottom: 0; }
+    .auto-tag {
+      font-size: 10px;
+      color: #888;
+      background: #f0f0f0;
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+    .tab-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tab {
+      padding: 6px 14px;
+      border: 0.5px solid #ccc;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      background: transparent;
+      color: #1a1a1a;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: #e8f0fb;
+      color: #1a56c4;
+      border-color: #9ab8ef;
+    }
+    .weather-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .metric {
+      background: #f7f7f4;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .metric-label { font-size: 11px; color: #999; margin-bottom: 4px; }
+    .metric-input {
+      font-size: 22px;
+      font-weight: 500;
+      border: none;
+      border-bottom: 1.5px solid transparent;
+      background: transparent;
+      width: 100%;
+      color: #1a1a1a;
+      outline: none;
+      padding: 0;
+      -moz-appearance: textfield;
+    }
+    .metric-input::-webkit-outer-spin-button,
+    .metric-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .metric-input:focus { border-bottom-color: #9ab8ef; }
+    .metric-unit { font-size: 11px; color: #bbb; margin-top: 2px; }
+    .status-msg { font-size: 13px; color: #888; padding: 6px 0; }
+    .refresh-btn {
+      margin-top: 10px;
+      padding: 7px 16px;
+      border: 0.5px solid #ccc;
+      border-radius: 8px;
+      background: transparent;
+      color: #1a1a1a;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .refresh-btn:hover { background: #f5f5f0; }
+    .note { font-size: 11px; color: #bbb; margin-top: 6px; }
+    .lake-depth-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .lake-depth-label { font-size: 13px; color: #555; flex: 1; }
+    .lake-depth-input {
+      border: 0.5px solid #ccc;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 15px;
+      font-weight: 500;
+      width: 80px;
+      background: #fff;
+      color: #1a1a1a;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+    .lake-depth-input::-webkit-outer-spin-button,
+    .lake-depth-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .lake-depth-input:focus { outline: none; border-color: #9ab8ef; }
+    .lake-depth-unit { font-size: 12px; color: #aaa; }
+    .sky-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .sky-btn {
+      padding: 10px 6px;
+      border: 0.5px solid #ccc;
+      border-radius: 10px;
+      font-size: 12px;
+      cursor: pointer;
+      background: transparent;
+      color: #555;
+      text-align: center;
+      line-height: 1.4;
+      transition: all 0.15s;
+    }
+    .sky-btn .icon { font-size: 18px; display: block; margin-bottom: 3px; }
+    .sky-btn.active {
+      background: #e8f0fb;
+      color: #1a56c4;
+      border-color: #9ab8ef;
+    }
+    .sub-section { margin-top: 12px; padding-top: 12px; border-top: 0.5px solid #f0f0f0; }
+    .result-depth { font-size: 40px; font-weight: 500; margin-bottom: 4px; }
+    .result-range { font-size: 13px; color: #888; margin-bottom: 10px; }
+    .activity-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .active-badge { background: #e6f4ea; color: #2a7a3b; }
+    .neutral-badge { background: #fef3e2; color: #a05c00; }
+    .inactive-badge { background: #fdeaea; color: #a03030; }
+    .bait-tip { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 10px; }
+    .bait-tip strong { color: #1a1a1a; font-weight: 500; }
+    .why-list { padding-top: 10px; border-top: 0.5px solid #eee; }
+    .why-label {
+      font-size: 11px;
+      color: #bbb;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    .why-item {
+      font-size: 12px;
+      color: #888;
+      padding: 2px 0;
+      display: flex;
+      gap: 6px;
+    }
+    .why-dot { color: #ccc; flex-shrink: 0; }
+    @media (max-width: 400px) {
+      .weather-grid { grid-template-columns: repeat(2, 1fr); }
+      .sky-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Fishing Depth Calculator</h1>
+<p class="subtitle">Lake fishing · Bluegill · Crappie · Bass · Sunfish · Perch · Carp</p>
+
+<!-- Target Species -->
+<div class="card">
+  <div class="section-label">Target species</div>
+  <div class="tab-group" id="fish-tabs">
+    <button class="tab active" data-fish="bluegill" onclick="setFish('bluegill')">Bluegill</button>
+    <button class="tab" data-fish="crappie" onclick="setFish('crappie')">Crappie</button>
+    <button class="tab" data-fish="bass" onclick="setFish('bass')">Bass</button>
+    <button class="tab" data-fish="sunfish" onclick="setFish('sunfish')">Sunfish</button>
+    <button class="tab" data-fish="perch" onclick="setFish('perch')">Perch</button>
+    <button class="tab" data-fish="carp" onclick="setFish('carp')">Carp</button>
+  </div>
+</div>
+
+<!-- Live Conditions -->
+<div class="card">
+  <div class="section-label">Live conditions</div>
+  <div id="weather-status" class="status-msg">Detecting your location...</div>
+  <div id="weather-grid" class="weather-grid" style="display:none">
+    <div class="metric">
+      <div class="metric-label">Air temp</div>
+      <input class="metric-input" type="number" id="air-temp" placeholder="--" oninput="onConditionEdit()">
+      <div class="metric-unit">°F — tap to edit</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Water temp</div>
+      <input class="metric-input" type="number" id="water-temp" placeholder="--" oninput="onConditionEdit()">
+      <div class="metric-unit">°F — tap to edit</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Pressure</div>
+      <input class="metric-input" type="number" id="pressure" placeholder="--" oninput="onConditionEdit()">
+      <div class="metric-unit">hPa — tap to edit</div>
+    </div>
+  </div>
+  <div id="weather-note" class="note" style="display:none">Water temp is surface temp. Lake thermoclines mean fish may be significantly cooler at depth.</div>
+  <button class="refresh-btn" onclick="loadWeather()">↺ Refresh conditions</button>
+</div>
+
+<!-- Lake Details -->
+<div class="card">
+  <div class="section-label">Lake details</div>
+
+  <div class="lake-depth-row">
+    <div class="lake-depth-label">Max lake depth <span style="color:#bbb;font-size:11px">(optional)</span></div>
+    <input class="lake-depth-input" type="number" id="lake-depth" placeholder="—" min="1" max="200" oninput="onConditionEdit()">
+    <span class="lake-depth-unit">ft</span>
+  </div>
+
+  <div class="section-label" style="margin-bottom:8px">Water clarity</div>
+  <div class="tab-group" id="turbidity-tabs">
+    <button class="tab active" data-turb="clear" onclick="setTurbidity('clear')">Clear</button>
+    <button class="tab" data-turb="slightStain" onclick="setTurbidity('slightStain')">Slight stain</button>
+    <button class="tab" data-turb="stained" onclick="setTurbidity('stained')">Stained</button>
+    <button class="tab" data-turb="murky" onclick="setTurbidity('murky')">Murky</button>
+  </div>
+</div>
+
+<!-- Time of Day -->
+<div class="card">
+  <div class="section-header">
+    <div class="section-label">Time of day</div>
+    <span class="auto-tag" id="time-auto-tag">auto</span>
+  </div>
+  <div class="tab-group" id="time-tabs">
+    <button class="tab" data-time="dawn" onclick="setTime('dawn')">Dawn</button>
+    <button class="tab" data-time="morning" onclick="setTime('morning')">Morning</button>
+    <button class="tab" data-time="midday" onclick="setTime('midday')">Midday</button>
+    <button class="tab" data-time="afternoon" onclick="setTime('afternoon')">Afternoon</button>
+    <button class="tab" data-time="dusk" onclick="setTime('dusk')">Dusk</button>
+    <button class="tab" data-time="night" onclick="setTime('night')">Night</button>
+  </div>
+</div>
+
+<!-- Season & Spawn -->
+<div class="card">
+  <div class="section-header">
+    <div class="section-label">Season</div>
+    <span class="auto-tag" id="season-auto-tag">auto</span>
+  </div>
+  <div class="tab-group" id="season-tabs">
+    <button class="tab" data-season="spring" onclick="setSeason('spring')">Spring</button>
+    <button class="tab" data-season="summer" onclick="setSeason('summer')">Summer</button>
+    <button class="tab" data-season="fall" onclick="setSeason('fall')">Fall</button>
+    <button class="tab" data-season="winter" onclick="setSeason('winter')">Winter</button>
+  </div>
+  <div id="spawn-section" style="display:none" class="sub-section">
+    <div class="section-label">Spawn stage</div>
+    <div class="tab-group" id="spawn-tabs">
+      <button class="tab" data-spawn="preSpawn" onclick="setSpawn('preSpawn')">Pre-spawn</button>
+      <button class="tab" data-spawn="spawn" onclick="setSpawn('spawn')">Spawn</button>
+      <button class="tab" data-spawn="postSpawn" onclick="setSpawn('postSpawn')">Post-spawn</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sky & Conditions -->
+<div class="card">
+  <div class="section-label">Sky & conditions</div>
+  <div class="sky-grid" id="sky-btns">
+    <button class="sky-btn active" data-sky="clear" onclick="setSky('clear', this)">
+      <span class="icon">☀️</span>Clear
+    </button>
+    <button class="sky-btn" data-sky="partlyCloudy" onclick="setSky('partlyCloudy', this)">
+      <span class="icon">🌤</span>Partly cloudy
+    </button>
+    <button class="sky-btn" data-sky="overcast" onclick="setSky('overcast', this)">
+      <span class="icon">☁️</span>Overcast
+    </button>
+    <button class="sky-btn" data-sky="lightRain" onclick="setSky('lightRain', this)">
+      <span class="icon">🌧</span>Light rain
+    </button>
+    <button class="sky-btn" data-sky="postFront" onclick="setSky('postFront', this)">
+      <span class="icon">🌬️</span>Post-front
+    </button>
+    <button class="sky-btn" data-sky="storm" onclick="setSky('storm', this)">
+      <span class="icon">⛈️</span>Storm
+    </button>
+  </div>
+</div>
+
+<!-- Result -->
+<div class="card" id="result-card" style="display:none">
+  <div class="section-label">Recommendation — <span id="fish-name-out"></span></div>
+  <div class="result-depth" id="depth-out"></div>
+  <div class="result-range" id="range-out"></div>
+  <div id="activity-out"></div>
+  <div class="bait-tip" id="bait-out"></div>
+  <div class="why-list">
+    <div class="why-label">Why</div>
+    <div id="why-items"></div>
+  </div>
+</div>
+
+<script>
+  let currentFish = 'bluegill';
+  let currentTimePeriod = 'morning';
+  let currentSeason = 'spring';
+  let currentSpawnStage = 'preSpawn';
+  let currentSky = 'clear';
+  let currentTurbidity = 'clear';
+  let weatherData = null;
+
+  // Lake-specific fish profiles:
+  // - Higher base depths (lakes have more open water and deeper structure)
+  // - Higher max depths (lakes can be 20–40+ ft for most species)
+  // - Bait tips focus on lake tactics: drop-offs, points, ledges, docks, open-water jigging
+  const fishProfiles = {
+    bluegill: {
+      name: 'Bluegill',
+      idealWater: [68, 75],
+      baseDepth: 5,        // Lakes: bluegill suspend higher off bottom near structure
+      tempScale: 0.15,
+      maxDepth: 18,        // Lake bluegill can be found 15–18ft near structure in summer
+      baits: {
+        active: '<strong>Bait:</strong> Small wax worms or red wigglers under a slip bobber. Work dock edges, laydowns, and weed lines. Size 8 hook.',
+        neutral: '<strong>Bait:</strong> Crickets or small nightcrawler pieces near submerged brush or dock pilings. Slow down and let it sit.',
+        inactive: '<strong>Bait:</strong> Tiny wax worms or spike larvae. Target deep dock shade or submerged structure. Size 10 hook, nearly stationary.'
+      }
+    },
+    crappie: {
+      name: 'Crappie',
+      idealWater: [65, 72],
+      baseDepth: 10,       // Lake crappie routinely hold 8–15ft near structure
+      tempScale: 0.20,
+      maxDepth: 25,        // Lake crappie can go very deep in summer (20–25ft thermocline edges)
+      baits: {
+        active: '<strong>Bait:</strong> 1/16–1/32 oz jig (chartreuse or pink) or live minnow. Work dock edges, standing timber, and channel drop-offs.',
+        neutral: '<strong>Bait:</strong> Live minnow or small tube jig suspended under a slip float. Slow your retrieve, stay near underwater points and brush piles.',
+        inactive: '<strong>Bait:</strong> Small minnow vertical jigged over deep brush or creek channel humps. Find the thermocline edge and hold just above it.'
+      }
+    },
+    bass: {
+      name: 'Bass',
+      idealWater: [65, 78],
+      baseDepth: 8,        // Lake bass use ledges, points, and drop-offs — deeper baseline than ponds
+      tempScale: 0.18,
+      maxDepth: 25,        // Summer ledge fishing regularly puts bass 15–25ft deep
+      baits: {
+        active: '<strong>Bait:</strong> Swim jig or crankbait along points, rocky banks, and transition zones. Bass are aggressive — cover water fast.',
+        neutral: '<strong>Bait:</strong> Drop shot, ned rig, or football jig on ledges and mid-lake humps. Slow down and work structure methodically.',
+        inactive: '<strong>Bait:</strong> Slow-rolled finesse jig on deep channel ledges (15–25ft). Put it right in front of them and barely move it.'
+      }
+    },
+    sunfish: {
+      name: 'Sunfish',
+      idealWater: [70, 78],
+      baseDepth: 4,        // Lake sunfish hold slightly deeper than pond fish near weed edges
+      tempScale: 0.12,
+      maxDepth: 12,        // Rarely go deeper than 12ft even in lakes
+      baits: {
+        active: '<strong>Bait:</strong> Crickets, grasshoppers, or small worms along weed lines and dock edges. Fish are aggressive near the surface.',
+        neutral: '<strong>Bait:</strong> Small worms or wax worms near submerged vegetation and dock pilings at mid-depth.',
+        inactive: '<strong>Bait:</strong> Tiny wax worms fished very slowly near deep weed edges or dock shade. Go light and small.'
+      }
+    },
+    perch: {
+      name: 'Yellow Perch',
+      idealWater: [62, 72],
+      baseDepth: 14,       // Lake perch are deep-water fish — often 12–25ft in open lakes
+      tempScale: 0.20,
+      maxDepth: 35,        // Lake perch can school 25–35ft deep over sandy/gravelly flats
+      baits: {
+        active: '<strong>Bait:</strong> Small minnow or nightcrawler piece on a size 6 hook near bottom. Perch school tight — find one over a flat or point, find many.',
+        neutral: '<strong>Bait:</strong> Live minnow or wax worm drifted slowly just above the bottom. Target sandy flats, gravel bars, and creek channel edges.',
+        inactive: '<strong>Bait:</strong> Tiny minnow head or wax worm fished extremely slowly on the bottom in deep water (20–35ft). Vertical jigging with a dropper rig works best.'
+      }
+    },
+    carp: {
+      name: 'Carp',
+      idealWater: [65, 75],
+      baseDepth: 4,        // Carp are bottom feeders that often root in shallows and flats
+      tempScale: 0.12,
+      maxDepth: 15,        // Rarely go deeper than 15ft; prefer shallow to mid-depth flats
+      baits: {
+        active: '<strong>Bait:</strong> Corn, dough ball, or boilies on a hair rig. Target muddy flats, river bends, and weedy bays — carp will be actively rooting.',
+        neutral: '<strong>Bait:</strong> Sweetcorn or bread flake on the bottom near underwater vegetation. Use a longer soak — carp are cautious but still feeding.',
+        inactive: '<strong>Bait:</strong> Flavored boilie or small dough ball fished on a slack line near deeper channel edges. Be patient; very little movement needed.'
+      }
+    }
+  };
+
+  const skyReasons = {
+    clear: 'Clear sky — bright light drives fish deeper into the water column',
+    partlyCloudy: 'Partly cloudy — moderate conditions, fish at mid-range depths',
+    overcast: 'Overcast — diffused light pulls fish shallower toward structure',
+    lightRain: 'Light rain — fish are aggressive and moving shallow to feed',
+    postFront: 'Post-cold front — fish retreat deep and are very sluggish',
+    storm: 'Storm — fish push tight to deep cover, fishing is very poor'
+  };
+
+  const timeReasons = {
+    dawn: 'Dawn feeding window — fish push to shallow flats and shoreline structure',
+    morning: 'Morning — fish feeding along points and weed edges at moderate depths',
+    midday: 'Midday heat — fish suspend near the thermocline or move to deep shade',
+    afternoon: 'Afternoon — fish begin moving back up from depth toward structure',
+    dusk: 'Dusk feeding window — fish very active, pushing into shallows and on points',
+    night: 'Night — fish hold in open water or near deep structure'
+  };
+
+  const turbidityReasons = {
+    clear: 'Clear lake water — fish go deeper; rely on sight and need more cover',
+    slightStain: 'Slight stain — near-normal lake depth behavior',
+    stained: 'Stained water — fish more comfortable shallower, less light penetration',
+    murky: 'Murky water — fish hold shallower, rely on lateral line and smell over sight'
+  };
+
+  function autoTime() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 8) return 'dawn';
+    if (h >= 8 && h < 11) return 'morning';
+    if (h >= 11 && h < 15) return 'midday';
+    if (h >= 15 && h < 18) return 'afternoon';
+    if (h >= 18 && h < 21) return 'dusk';
+    return 'night';
+  }
+
+  function autoSeason() {
+    const m = new Date().getMonth() + 1;
+    if (m >= 3 && m <= 5) return 'spring';
+    if (m >= 6 && m <= 8) return 'summer';
+    if (m >= 9 && m <= 11) return 'fall';
+    return 'winter';
+  }
+
+  function autoSpawn(waterTemp) {
+    if (waterTemp !== null && waterTemp !== undefined) {
+      if (waterTemp < 63) return 'preSpawn';
+      if (waterTemp <= 74) return 'spawn';
+      return 'postSpawn';
+    }
+    const m = new Date().getMonth() + 1;
+    if (m <= 4) return 'preSpawn';
+    if (m === 5) return 'spawn';
+    return 'postSpawn';
+  }
+
+  function activateTab(groupId, dataAttr, value) {
+    document.querySelectorAll('#' + groupId + ' .tab').forEach(function(t) {
+      t.classList.toggle('active', t.dataset[dataAttr] === value);
+    });
+  }
+
+  function setFish(fish) {
+    currentFish = fish;
+    activateTab('fish-tabs', 'fish', fish);
+    if (weatherData) calculate(weatherData);
+  }
+
+  function setTime(time) {
+    currentTimePeriod = time;
+    document.getElementById('time-auto-tag').style.display = 'none';
+    activateTab('time-tabs', 'time', time);
+    if (weatherData) calculate(weatherData);
+  }
+
+  function setSeason(season) {
+    currentSeason = season;
+    document.getElementById('season-auto-tag').style.display = 'none';
+    activateTab('season-tabs', 'season', season);
+    document.getElementById('spawn-section').style.display = season === 'spring' ? 'block' : 'none';
+    if (weatherData) calculate(weatherData);
+  }
+
+  function setSpawn(stage) {
+    currentSpawnStage = stage;
+    activateTab('spawn-tabs', 'spawn', stage);
+    if (weatherData) calculate(weatherData);
+  }
+
+  function setSky(sky, btn) {
+    currentSky = sky;
+    document.querySelectorAll('#sky-btns .sky-btn').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    if (weatherData) calculate(weatherData);
+  }
+
+  function setTurbidity(turb) {
+    currentTurbidity = turb;
+    activateTab('turbidity-tabs', 'turb', turb);
+    if (weatherData) calculate(weatherData);
+  }
+
+  function onConditionEdit() {
+    var air = parseFloat(document.getElementById('air-temp').value);
+    var water = parseFloat(document.getElementById('water-temp').value);
+    var pressure = parseFloat(document.getElementById('pressure').value);
+    if (!isNaN(air) && !isNaN(water) && !isNaN(pressure)) {
+      weatherData = { airTemp: air, waterTemp: water, pressure: pressure };
+      calculate(weatherData);
+    }
+  }
+
+  function initDefaults() {
+    currentTimePeriod = autoTime();
+    activateTab('time-tabs', 'time', currentTimePeriod);
+    currentSeason = autoSeason();
+    activateTab('season-tabs', 'season', currentSeason);
+    if (currentSeason === 'spring') {
+      document.getElementById('spawn-section').style.display = 'block';
+      currentSpawnStage = autoSpawn(null);
+      activateTab('spawn-tabs', 'spawn', currentSpawnStage);
+    }
+  }
+
+  function estimateWaterTemp(airTemp) {
+    return Math.round(airTemp * 0.6 + (airTemp - 4) * 0.4);
+  }
+
+  async function loadWeather() {
+    var statusEl = document.getElementById('weather-status');
+    var gridEl = document.getElementById('weather-grid');
+    statusEl.textContent = 'Detecting your location...';
+    statusEl.style.display = 'block';
+    gridEl.style.display = 'none';
+
+    if (!navigator.geolocation) {
+      showManualMode('Location not supported — enter conditions below:');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async function(pos) {
+      var lat = pos.coords.latitude;
+      var lon = pos.coords.longitude;
+      statusEl.textContent = 'Loading weather...';
+      try {
+        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+                  '&current=temperature_2m,surface_pressure&temperature_unit=fahrenheit&timezone=auto';
+        var res = await fetch(url);
+        var json = await res.json();
+        var airF = Math.round(json.current.temperature_2m);
+        var pressHpa = Math.round(json.current.surface_pressure);
+        var waterF = estimateWaterTemp(airF);
+
+        document.getElementById('air-temp').value = airF;
+        document.getElementById('water-temp').value = waterF;
+        document.getElementById('pressure').value = pressHpa;
+
+        weatherData = { airTemp: airF, waterTemp: waterF, pressure: pressHpa };
+        statusEl.style.display = 'none';
+        gridEl.style.display = 'grid';
+        document.getElementById('weather-note').style.display = 'block';
+
+        if (currentSeason === 'spring') {
+          currentSpawnStage = autoSpawn(waterF);
+          activateTab('spawn-tabs', 'spawn', currentSpawnStage);
+        }
+        calculate(weatherData);
+      } catch (e) {
+        showManualMode('Could not load weather — enter conditions below:');
+      }
+    }, function() {
+      showManualMode('Location denied — enter conditions below:');
+    });
+  }
+
+  function showManualMode(msg) {
+    var statusEl = document.getElementById('weather-status');
+    statusEl.textContent = msg;
+    document.getElementById('weather-grid').style.display = 'grid';
+  }
+
+  function calculate(data) {
+    var airTemp = data.airTemp;
+    var waterTemp = data.waterTemp;
+    var pressure = data.pressure;
+    var profile = fishProfiles[currentFish];
+    var idealLow = profile.idealWater[0];
+    var idealHigh = profile.idealWater[1];
+    var idealMid = (idealLow + idealHigh) / 2;
+    var reasons = [];
+    var depth = profile.baseDepth;
+
+    // 1. Water temperature
+    var tempDiff = waterTemp - idealMid;
+    depth += tempDiff * profile.tempScale * -1;
+    if (waterTemp < idealLow - 10) {
+      depth += 4;
+      reasons.push('Water ' + waterTemp + '°F is very cold — fish go deep and barely move');
+    } else if (waterTemp < idealLow) {
+      depth += 2;
+      reasons.push('Water ' + waterTemp + '°F is cool — fish run deeper in the water column');
+    } else if (waterTemp > idealHigh + 8) {
+      depth += 3;
+      reasons.push('Water ' + waterTemp + '°F is very warm — fish dive to find cooler water near the thermocline');
+    } else if (waterTemp > idealHigh) {
+      depth += 1.5;
+      reasons.push('Water ' + waterTemp + '°F is warm — fish go deeper toward cooler layers');
+    } else {
+      reasons.push('Water ' + waterTemp + '°F is ideal for ' + profile.name);
+    }
+
+    // 2. Time of day
+    var todAdj = { dawn: -2.0, morning: -1.0, midday: 3.0, afternoon: 1.0, dusk: -2.0, night: 1.5 };
+    depth += todAdj[currentTimePeriod] || 0;
+    reasons.push(timeReasons[currentTimePeriod]);
+
+    // 3. Season & spawn
+    if (currentSeason === 'spring') {
+      var spawnAdj = { preSpawn: -1.5, spawn: -3, postSpawn: 1.0 };
+      depth += spawnAdj[currentSpawnStage] || 0;
+      var spawnReasons = {
+        preSpawn: 'Pre-spawn — fish staging on points and secondary structure before moving shallow',
+        spawn: 'Spawn — fish on shallow beds in coves and protected banks',
+        postSpawn: 'Post-spawn — fish recovering, sliding back to deeper adjacent structure'
+      };
+      reasons.push(spawnReasons[currentSpawnStage]);
+    } else if (currentSeason === 'summer') {
+      // Lake-specific: thermocline pushes fish to a specific depth band in summer
+      if (waterTemp > 82) {
+        depth += 4;
+        reasons.push('Hot summer — thermocline forms; fish stack just above the oxygen-depleted zone (often 18–25ft)');
+      } else if (waterTemp > 75) {
+        depth += 2;
+        reasons.push('Warm summer — fish moving toward the thermocline edge and deeper structure');
+      } else {
+        reasons.push('Summer — fish holding on mid-lake points, humps, and drop-offs');
+      }
+    } else if (currentSeason === 'fall') {
+      depth -= 1.5;
+      reasons.push('Fall turnover approaching — fish chase shad and baitfish into shallows aggressively');
+    } else if (currentSeason === 'winter') {
+      depth += 4;
+      reasons.push('Winter — fish pack into the deepest available structure and move very little');
+    }
+
+    // 4. Sky & conditions
+    var skyAdj = { clear: 2.0, partlyCloudy: 0.5, overcast: -1.0, lightRain: -1.5, postFront: 3.0, storm: 4.0 };
+    depth += skyAdj[currentSky] || 0;
+    reasons.push(skyReasons[currentSky]);
+
+    // 5. Water clarity — clear lakes push fish much deeper than stained ones
+    var turbAdj = { clear: 2.0, slightStain: 0.5, stained: -1.0, murky: -2.0 };
+    depth += turbAdj[currentTurbidity] || 0;
+    reasons.push(turbidityReasons[currentTurbidity]);
+
+    // 6. Barometric pressure
+    if (pressure > 1020) {
+      depth += 2.0;
+      reasons.push('High pressure (' + pressure + ' hPa) — fish suspend deep and feed less');
+    } else if (pressure < 1000) {
+      depth -= 1.0;
+      reasons.push('Low pressure (' + pressure + ' hPa) — fish more active, moving up in the water column');
+    }
+
+    // 7. Air-water temp gap (cold front indicator)
+    if (airTemp < waterTemp - 12) {
+      depth += 2.5;
+      reasons.push('Large air-water temp gap — cold front passed, fish pulling deep to stable water');
+    }
+
+    // Determine effective max depth: species max vs lake depth (whichever is smaller)
+    var lakeDepthInput = parseFloat(document.getElementById('lake-depth').value);
+    var effectiveMax = isNaN(lakeDepthInput) ? profile.maxDepth : Math.min(profile.maxDepth, lakeDepthInput);
+    if (!isNaN(lakeDepthInput)) {
+      reasons.push('Lake depth ' + lakeDepthInput + ' ft — recommendation capped accordingly');
+    }
+
+    depth = Math.max(1, Math.min(effectiveMax, Math.round(depth * 10) / 10));
+    var low = Math.max(1, Math.round((depth - 2) * 10) / 10);
+    var high = Math.min(effectiveMax, Math.round((depth + 3) * 10) / 10);
+
+    // Activity level
+    var tempInRange = waterTemp >= idealLow && waterTemp <= idealHigh;
+    var badSky = currentSky === 'postFront' || currentSky === 'storm';
+    var greatSky = currentSky === 'overcast' || currentSky === 'lightRain';
+    var peakTime = currentTimePeriod === 'dawn' || currentTimePeriod === 'dusk';
+    var badTime = currentTimePeriod === 'midday' || currentTimePeriod === 'night';
+    var spawning = currentSeason === 'spring' && currentSpawnStage === 'spawn';
+    var winter = currentSeason === 'winter';
+    var highPressure = pressure > 1020;
+    var tooCold = waterTemp < idealLow - 10;
+    var tooHot = waterTemp > idealHigh + 12;
+
+    var activity;
+    if (badSky || winter || tooCold || tooHot) {
+      activity = 'inactive';
+    } else if (spawning || (tempInRange && (greatSky || peakTime) && !badTime && !highPressure)) {
+      activity = 'active';
+    } else {
+      activity = 'neutral';
+    }
+
+    document.getElementById('fish-name-out').textContent = profile.name;
+    document.getElementById('depth-out').textContent = depth.toFixed(1) + ' ft';
+    document.getElementById('range-out').textContent = 'Suggested range: ' + low + ' – ' + high + ' ft';
+    document.getElementById('activity-out').innerHTML =
+      '<span class="activity-badge ' + activity + '-badge">' +
+      activity.charAt(0).toUpperCase() + activity.slice(1) + '</span>';
+    document.getElementById('bait-out').innerHTML = profile.baits[activity];
+    document.getElementById('why-items').innerHTML =
+      reasons.slice(0, 6).map(function(r) {
+        return '<div class="why-item"><span class="why-dot">·</span><span>' + r + '</span></div>';
+      }).join('');
+    document.getElementById('result-card').style.display = 'block';
+  }
+
+  initDefaults();
+  loadWeather();
+</script>
+
+<!-- 2026 Spawn Calendar -->
+<div class="card" style="margin-top:4px">
+  <div class="section-label" style="margin-bottom:4px">2026 Spawning Season Calendar</div>
+  <div style="font-size:11px;color:#888;margin-bottom:12px">Brewster Angler's Club · Stark County, NE Ohio · ~90% confidence based on ODNR historical water temp records</div>
+
+  <!-- Legend -->
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#d4eaf7"></span>Perch
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#d5ecd9"></span>Crappie
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#fde8cc"></span>Bass
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#e8d5f5"></span>Bluegill
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#fdf3c0"></span>Sunfish
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#555">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#d6ede8"></span>Carp
+    </span>
+  </div>
+
+  <!-- Calendar grid -->
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;min-width:340px">
+      <thead>
+        <tr>
+          <th style="font-size:10px;color:#aaa;font-weight:500;text-align:left;padding:0 4px 6px 0;white-space:nowrap">Species</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Jan</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Feb</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Mar</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Apr</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">May</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Jun</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Jul</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Aug</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Sep</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Oct</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Nov</th>
+          <th style="font-size:10px;color:#aaa;font-weight:400;padding:0 2px 6px;text-align:center">Dec</th>
+        </tr>
+      </thead>
+      <tbody id="spawn-calendar-body">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Peak dates table -->
+  <div style="margin-top:14px;padding-top:12px;border-top:0.5px solid #f0f0f0">
+    <div style="font-size:10px;color:#bbb;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Typical peak dates for Stark County</div>
+    <div id="peak-dates" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px"></div>
+  </div>
+
+  <div style="font-size:11px;color:#bbb;margin-top:12px;line-height:1.5">
+    Calibrated to NE Ohio historical averages. Cold springs (common in Stark County) can push windows 1–2 weeks later; warm Aprils pull them earlier. Year-to-year variance is the primary reason confidence sits at ~90% rather than higher.
+  </div>
+</div>
+
+<script>
+  // Spawn windows calibrated to Stark County, NE Ohio (lat ~40.7°N)
+  // Based on ODNR historical records and regional avg water temps:
+  //   Mar: 38–47°F  |  Apr: 48–58°F  |  May: 60–70°F
+  //   Jun: 70–78°F  |  Jul: 78–82°F  |  Aug: 79–81°F
+  var spawnData = [
+    {
+      name: 'Perch',
+      color: '#d4eaf7',
+      textColor: '#1a6a9a',
+      months: [2, 3],  // Late Mar – mid Apr · triggers at 44–52°F right after local ice-out (typically mid-Mar)
+      note: '44–52°F',
+      peak: 'Late Mar – mid Apr'
+    },
+    {
+      name: 'Crappie',
+      color: '#d5ecd9',
+      textColor: '#2a7a3b',
+      months: [3, 4],  // Late Apr – late May · Stark Co. water hits 55°F ~late Apr
+      note: '55–65°F',
+      peak: 'Late Apr – late May'
+    },
+    {
+      name: 'Bass',
+      color: '#fde8cc',
+      textColor: '#a05c00',
+      months: [4, 5],  // Mid May – mid Jun · water hits 60°F ~mid May in NE Ohio
+      note: '60–75°F',
+      peak: 'Mid May – mid Jun'
+    },
+    {
+      name: 'Bluegill',
+      color: '#e8d5f5',
+      textColor: '#6a2a9a',
+      months: [4, 5, 6],  // Late May – mid Jul · multiple spawn cycles; peak in Jun
+      note: '68–80°F',
+      peak: 'Late May – mid Jul'
+    },
+    {
+      name: 'Sunfish',
+      color: '#fdf3c0',
+      textColor: '#8a6a00',
+      months: [4, 5, 6, 7],  // Late May – early Aug · longest window; can spawn through Aug in warm years
+      note: '68–82°F',
+      peak: 'Late May – early Aug'
+    },
+    {
+      name: 'Carp',
+      color: '#d6ede8',
+      textColor: '#1a7a5a',
+      months: [4, 5, 6],  // Mid May – late Jul · spawn in shallow weedy bays when water hits 62–72°F
+      note: '62–72°F',
+      peak: 'Mid May – late Jul'
+    }
+  ];
+
+  function buildCalendar() {
+    var tbody = document.getElementById('spawn-calendar-body');
+    spawnData.forEach(function(species) {
+      var tr = document.createElement('tr');
+      // Species name cell
+      var nameTd = document.createElement('td');
+      nameTd.style.cssText = 'font-size:12px;color:#555;padding:3px 6px 3px 0;white-space:nowrap;vertical-align:middle';
+      nameTd.textContent = species.name;
+      tr.appendChild(nameTd);
+
+      // 12 month cells
+      for (var m = 0; m < 12; m++) {
+        var td = document.createElement('td');
+        td.style.cssText = 'padding:2px;text-align:center';
+        var cell = document.createElement('div');
+        cell.style.cssText = 'width:100%;height:20px;border-radius:4px;';
+        if (species.months.indexOf(m) !== -1) {
+          cell.style.background = species.color;
+          // Add water temp label on first spawn month only
+          if (m === species.months[0]) {
+            cell.style.cssText += 'display:flex;align-items:center;justify-content:center;';
+            cell.innerHTML = '<span style="font-size:8px;color:' + species.textColor + ';font-weight:500;white-space:nowrap;overflow:hidden">' + species.note + '</span>';
+          }
+        } else {
+          cell.style.background = '#f7f7f4';
+        }
+        td.appendChild(cell);
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    });
+
+    // Build peak dates section
+    var peakDiv = document.getElementById('peak-dates');
+    spawnData.forEach(function(species) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:3px 0';
+      row.innerHTML =
+        '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:' + species.color + ';flex-shrink:0"></span>' +
+        '<span style="font-size:12px;color:#555;font-weight:500;min-width:58px">' + species.name + '</span>' +
+        '<span style="font-size:12px;color:#888">' + species.peak + '</span>' +
+        '<span style="font-size:11px;color:#bbb;margin-left:auto">' + species.note + '</span>';
+      peakDiv.appendChild(row);
+    });
+  }
+
+  buildCalendar();
+</script>
+
+</body>
+</html>
